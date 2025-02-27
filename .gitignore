@@ -1,6 +1,12 @@
 # Created by https://www.toptal.com/developers/gitignore/api/java,eclipse,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,eclipse,macos
 
+META-INF
+Servers
+.classpath
+.project
+
+
 ### Eclipse ###
 .metadata
 bin/
