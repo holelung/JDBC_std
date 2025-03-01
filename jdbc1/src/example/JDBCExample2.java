@@ -29,7 +29,7 @@ public class JDBCExample2 {
 			String host = "112.221.156.34";
 			String port = ":12345";
 			String dbName = ":XE";
-			String userName = "KH00_TEACHER";
+			String userName = "KH19_JJH";
 			String password = "KH1234";
 			
 			// Connection 객체를 생성해서 얻어오기

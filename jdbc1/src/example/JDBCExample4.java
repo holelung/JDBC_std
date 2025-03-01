@@ -23,13 +23,13 @@ public class JDBCExample4 {
 		ResultSet rs = null;
 		
 		try {
-			Class.forName("oracle.jdbc.OracleDriver");
+		Class.forName("oracle.jdbc.OracleDriver");
 			
 			String type = "jdbc:oracle:thin:@";
 			String host = "112.221.156.34";
 			String port = ":12345";
 			String dbName = ":XE";
-			String userName = "KH00_TEACHER";
+			String userName = "KH19_JJH";
 			String password = "KH1234";
 			
 			conn = DriverManager.getConnection(
