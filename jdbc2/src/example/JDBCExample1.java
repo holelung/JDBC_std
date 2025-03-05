@@ -30,7 +30,7 @@ public class JDBCExample1 {
 			// 학원 DB 서버 URL
 			// - jdbc 드라이버가 어떤 데이터베이스에 연결할지 지정
 			String url = "jdbc:oracle:thin:@112.221.156.34:12345:XE";
-			String userName = "KH00_TEACHER"; // 사용자 계정명
+			String userName = "KH19_JJH"; // 사용자 계정명
 			String password = "KH1234"; // 계정 비밀번호
 			
 			conn = DriverManager.getConnection(url, userName, password);
