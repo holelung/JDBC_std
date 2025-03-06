@@ -95,19 +95,28 @@ public class UserView {
 	private void insertUser() {
 		System.out.println("\n--- 회원 추가 페이지입니다. ---");
 		
-		System.out.print("아이디를 입력하세요 > ");
+		
 		String userId = null;
 		while(true) {
+			System.out.print("아이디를 입력하세요 > ");
 			userId = sc.nextLine();
+			
+			if(userId.length() > 30 ) {
+				System.out.println("아이디는 30자 이내로 입력해주세요");
+				continue;
+			}
+			
+			// 중복검사 대충 만들기
+			UserDTO user = userController.findByUserId(userId);
+			if(user!=null) {
+				System.out.println("존재하는 아이디 입니다.");
+				continue;
+			}
 			// UNIQUE 했다고 치고 입력받은 아이디 가지고 DB가서 WHERE조건절에 사용자가 입력한 아이디 넣어서
 			// 조회결과 있으면 다시 입력받게하든 뭘 하든
 			// SELECT USER_ID FROM TB_USER WHERE USER_ID = 사용자가 입력한 아이디값
  	 	 	
 			// userId.matches("^[a-zA-z]")
-			if(userId.length() > 30 ) {
-				System.out.println("아이디는 30자 이내로 입력해주세요");
-				continue;
-			}
 			break;
 		}
 		

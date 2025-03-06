@@ -185,7 +185,7 @@ public class UserDAO {
 	}
 	
 	/**
-	 * 
+	 * USER_ID로 회원조회
 	 * @param userId 입력받은 아이디
 	 * @param conn DB연결
 	 * @return 조회된 유저 정보
