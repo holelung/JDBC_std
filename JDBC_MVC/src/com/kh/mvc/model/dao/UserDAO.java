@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.kh.mvc.model.dto.UserDTO;
+import com.kh.mvc.util.JdbcUtil;
 
 /**
  * DAO(Data Access Object)
@@ -46,6 +47,11 @@ public class UserDAO {
 	 * 			SELECT: 6-1에서 만든 거
 	 * 			DML: 처리된 행의 개수
 	 */
+	
+//	private final String URL = "jdbc:oracle:thin:@112.221.156.34:12345:XE";
+//	private final String USERNAME = "KH19_JJH";
+//	private final String PASSWORD = "KH1234";
+	
 	static {
 		try {
 			Class.forName("oracle.jdbc.OracleDriver");
@@ -55,7 +61,7 @@ public class UserDAO {
 		}
 	}
 	
-	public List<UserDTO> findAll() {
+	public List<UserDTO> findAll(Connection conn) {
 		
 		/* VO / DTO / Entity
 		 * 
@@ -67,25 +73,15 @@ public class UserDAO {
 		 */
 		List<UserDTO> list = new ArrayList<UserDTO>();
 		
-		String sql = "SELECT * FROM TB_USER ORDER BY ENROLL_DATE DESC";
-//					"SELECT "
-//				+ 	"USER_NO"
-//				+ ", USER_ID"
-//				+ ", USER_PW"
-//				+ ", USER_NAME"
-//				+ ", ENROLL_DATE"
-//				+ "FROM"
-//				+ 	" TB_USER"
-//				+ "ORDER BY"
-//				+ 	" ENROLL_DATE DESC";
+		String sql = "SELECT USER_NO, USER_ID, USER_PW, USER_NAME, ENROLL_DATE FROM TB_USER ORDER BY ENROLL_DATE DESC";
 		
-		Connection conn = null;
+//		Connection conn = null;
 		PreparedStatement pstmt = null;
 		ResultSet rset = null;
 		try {
 			// 연결을 했다.
 
-			conn= DriverManager.getConnection("jdbc:oracle:thin:@112.221.156.34:12345:XE", "KH19_JJH", "KH1234");	
+//			conn= DriverManager.getConnection(URL, USERNAME, PASSWORD);	
 			pstmt = conn.prepareStatement(sql); // 도화지를 펼쳤다.(편집기 실행)
 			rset = pstmt.executeQuery(); // 실행해서 결과를 받는다.
 			
@@ -106,27 +102,7 @@ public class UserDAO {
 			e.printStackTrace();
 			System.out.println("오타가 나지 않았나요? 확인하셨나요? 두 번 봤나요?");
 		} finally {
-			try {
-				if(rset != null) {
-					rset.close();
-				}
-			} catch(SQLException e) {
-				System.out.println("DB 이상햄");
-			}
-			try {
-				if(pstmt != null) {
-					pstmt.close();
-				}
-			}catch(SQLException e) {
-				System.out.println("PrepareStatement 이상");
-			}
-			try {
-				if(conn != null) {
-					conn.close();
-				}
-			}catch(SQLException e) {
-				System.out.println("Conn 이상해");
-			}
+			JdbcUtil.dqlClose(rset, pstmt, conn);
 			
 		}
 		
@@ -137,11 +113,11 @@ public class UserDAO {
 	
 	/**
 	 * @param user 사용자가 입력한 아이디/비밀번호/이름이 각각 필드에 대입되어있음
-	 * @return 아직 모름
+	 * @return 추가 결과 int 로 반환(0: 실패 / 나머지: 성공)
 	 */
-	public int insertUser(UserDTO user) {
+	public int insertUser(UserDTO user, Connection conn) {
 		
-		Connection conn = null;
+//		Connection conn = null;
 		PreparedStatement pstmt = null;
 		int result = 0;
 		
@@ -151,7 +127,7 @@ public class UserDAO {
 				""";
 		
 		try {
-			conn= DriverManager.getConnection("jdbc:oracle:thin:@112.221.156.34:12345:XE", "KH19_JJH", "KH1234");
+//			conn= DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			
 			// conn.setAutoCommit(false);
 			pstmt = conn.prepareStatement(sql);
@@ -165,16 +141,151 @@ public class UserDAO {
 		} catch(SQLException e) {
 			e.printStackTrace(); // 개발할 때 디버깅 용. 서비스할 때는 이렇게 쓰지마삼. 예외처리 해야됨.
 		} finally {
-			try {// 숏 서킷 연산!
-				if(pstmt != null && !!!pstmt.isClosed()) pstmt.close();
-			}catch(SQLException e) {
-				e.printStackTrace();
+			JdbcUtil.dmlClose(pstmt, conn);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * 
+	 * @param userNo 입력받은 유저번호
+	 * @param conn DB 커넥션
+	 * @return 검색결과 UserDTO로 반환
+	 */
+	public UserDTO findByUserNo(int userNo, Connection conn) {
+		PreparedStatement pstmt = null;
+		ResultSet rset = null;
+		UserDTO user = null;
+		
+		String sql = """
+				SELECT USER_NO, USER_ID, USER_PW, USER_NAME, ENROLL_DATE FROM TB_USER WHERE USER_NO = ?
+				""";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setInt(1, userNo);
+			
+			rset = pstmt.executeQuery();
+			if(rset.next()) {
+				user = new UserDTO();
+				user.setUserNo(rset.getInt("USER_NO"));
+				user.setUserId(rset.getString("USER_ID"));
+				user.setUserPW(rset.getString("USER_PW"));
+				user.setUserName(rset.getString("USER_NAME"));
+				user.setEnrollDate(rset.getDate("ENROLL_DATE"));
 			}
-			try {
-				if(conn != null) conn.close();
-			}catch(SQLException e) {
-				e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtil.dqlClose(rset, pstmt, conn);
+		}
+			
+		return user;
+	}
+	
+	/**
+	 * 
+	 * @param userId 입력받은 아이디
+	 * @param conn DB연결
+	 * @return 조회된 유저 정보
+	 */
+	public UserDTO findByUserId(String userId, Connection conn) {
+		PreparedStatement pstmt = null;
+		ResultSet rset = null;
+		UserDTO user = null;
+		
+		String sql = """
+				SELECT USER_NO, USER_ID, USER_PW, USER_NAME, ENROLL_DATE FROM TB_USER WHERE USER_ID = ?
+				""";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setString(1, userId);
+			
+			rset = pstmt.executeQuery();
+			if(rset.next()) {
+				user = new UserDTO();
+				user.setUserNo(rset.getInt("USER_NO"));
+				user.setUserId(rset.getString("USER_ID"));
+				user.setUserPW(rset.getString("USER_PW"));
+				user.setUserName(rset.getString("USER_NAME"));
+				user.setEnrollDate(rset.getDate("ENROLL_DATE"));
 			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtil.dqlClose(rset, pstmt, conn);
+		}
+		
+		return user;
+	}
+	
+	
+	/**
+	 * 비밀번호 변경
+	 * @param userId 유저 아이디
+	 * @param userPw 바꿀 비밀번호
+	 * @param conn 
+	 * @return excuteUpdate 결과값
+	 */
+	public int modifyPw(String userId, String userPw, Connection conn) {
+		PreparedStatement pstmt = null;
+		int result = 0;
+		
+		// USER_ID가 PK든 UN든 걸려있다고 가정함(지금없음)
+		String sql =  """
+				UPDATE TB_USER SET
+					USER_PW = ?
+				WHERE 
+					USER_ID = ?
+				""";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, userPw);
+			pstmt.setString(2, userId);
+			
+			result = pstmt.executeUpdate();
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtil.dmlClose(pstmt, conn);
+		}
+		
+		return result;
+	}
+	
+	
+	/**
+	 * 회원 삭제
+	 * @param user UserDTO 객체
+	 * @param conn 
+	 * @return excuteUpdate 결과값
+	 */
+	public int deleteUser(UserDTO user, Connection conn) {
+		int result = 0;
+		PreparedStatement pstmt = null;
+		
+		String sql = """
+				DELETE FROM TB_USER WHERE USER_ID = ?
+				""";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setString(1, user.getUserId());
+			
+			result = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtil.dmlClose(pstmt, conn);
 		}
 		
 		return result;
